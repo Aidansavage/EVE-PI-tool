@@ -20,7 +20,7 @@ chomp($categories);
 print "\nplease select a region to search for:\t";
 our $search = <stdin>;
 chomp($search);
-print "]nsanitizing unsafe characters\n";
+print "\nsanitizing unsafe characters\n";
 our $urlsanity=uri_escape($search);
 
 
@@ -48,11 +48,20 @@ our $json;
   # Check the outcome of the response
   if ($res->is_success) {
       print $res->content;
+	  print "\nparsing response\n";
+	  $json= $res->decoded_content;
+	  print Dumper($json);
   }
   else {
       print $res->status_line, "\n";
   }
   
+
+  our %test=%{ decode_json($json)}; 
+our @anothertest = @{$test{'region'}};
+
+print @anothertest;
+print $anothertest[0];
   
 #  10000002 the forge
   
