@@ -3,21 +3,31 @@ use warnings;
 use JSON::XS;
 use Data::Dumper;
 use LWP::UserAgent;
-use Net::SSL;
- 
+#use Net::SSL;
+ use URI::Escape;
  
  # Create a user agent object
 
  our $accesstoken;
 our $hostname="https://esi.tech.ccp.is/latest/";
 print "current iteration is _latest \n";
-print "please select an endpoint: \t";
+print "please select an endpoint (test with search): \t";
 our $endpoint=<stdin>;
-print "\nplease select a category if applicable: \t";
+chomp($endpoint);
+print "\nplease select a category if applicable (test with region): \t";
 our $categories=<stdin>;
-print "\nplease select a datasource: \t";
-our $datasource=
-our $URL="${hostname}characters/Basandra%20Skye/inventory?access_token=${APIKey}";
+chomp($categories);
+print "\nplease select a region to search for:\t";
+our $search = <stdin>;
+chomp($search);
+print "]nsanitizing unsafe characters\n";
+our $urlsanity=uri_escape($search);
+
+
+our $URL= "${hostname}${endpoint}/?categories=${categories}&datasource=tranquility&language=en-us&search=${urlsanity}&strict=false";
+print "\n\n$URL\n\n";
+#our $sanitizedURL = uri_escape($URL);
+#print "\n\n$sanitizedURL\n\n";
 our $json;
  
  
@@ -28,7 +38,7 @@ our $json;
   $ua->agent("MyApp/0.1 ");
 
   # Create a request
-  my $req = HTTP::Request->new(GET => 'https://esi.tech.ccp.is/latest/search/?categories=region&datasource=tranquility&language=en-us&search=the%20forge&strict=false' );
+  my $req = HTTP::Request->new(GET => $URL );
   $req->content_type('application/json');
  
 
@@ -44,6 +54,6 @@ our $json;
   }
   
   
-  10000002
+#  10000002 the forge
   
-  34
+ # 34 tritanium
