@@ -214,14 +214,18 @@ sub useragentstuff {
 
 sub Auth {
 
- use Tk::DialogBox
-    ...
-    my $main::box = $main::main->DialogBox(-title => "Authorization", -buttons => ["OK", "Cancel"]);
-    my $widget = $main::box->add(Label, -text=> "Click OK when Authorization is complete")->pack;
-    ...
-    $button = $d->Show;
+ use Tk::DialogBox;
+    our $pid;
+    $main::box = $main::main->DialogBox(-title => "Authorization", -buttons => ["OK"],
+			-command=> sub {
+			kill('KILL', $pid);
+			},
+			);
+    my $widget = $main::box->add('Label', -text=> "Click OK when Authorization is complete")->pack;
+    
+ 
 $main::coderef = undef;
-my $main::readybox = $main::main->
+
 
 {
  package MyWebServer;
@@ -290,14 +294,14 @@ $main::authcode->configure(-textvariable=>\$main::coderef);
  
 
 
-my $pid = MyWebServer->new(8080)->background();
-print "User 'kill $pid' to stop server.\n";
+$pid = MyWebServer->new(8080)->background();
+print "Use 'kill $pid' to stop server.\n";
 use WWW::Shorten::TinyURL;
 
 my $shorturl= makeashorterlink('https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=http://localhost:8080/callback&client_id=a530913af26a4316a94c24a9a15d3bbc&state=12345');
 my @command = ('start', $shorturl);
 system(@command);
 
-
+  my $button = $main::box->Show;
 
  }
