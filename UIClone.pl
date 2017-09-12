@@ -214,14 +214,13 @@ sub useragentstuff {
 
 sub Auth {
 
- use Tk::DialogBox
-    ...
-    my $main::box = $main::main->DialogBox(-title => "Authorization", -buttons => ["OK", "Cancel"]);
-    my $widget = $main::box->add(Label, -text=> "Click OK when Authorization is complete")->pack;
-    ...
-    $button = $d->Show;
+ #use Tk::DialogBox;
+   
+    $main::box = $main::main->DialogBox(-title => "Authorization", -buttons => ["OK", "Cancel"]);
+    my $widget = $main::box->add('Label', -text=> "Click OK when Authorization is complete")->pack;
+   
+   
 $main::coderef = undef;
-my $main::readybox = $main::main->
 
 {
  package MyWebServer;
@@ -298,6 +297,6 @@ my $shorturl= makeashorterlink('https://login.eveonline.com/oauth/authorize?resp
 my @command = ('start', $shorturl);
 system(@command);
 
-
+ my $button = $main::box->Show;
 
  }

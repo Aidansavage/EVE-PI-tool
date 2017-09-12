@@ -15,6 +15,7 @@ use Tk;
 use Tk::LabFrame;
 use Tk::NoteBook;
 use Tk::BrowseEntry;
+use Tk::DialogBox;
 ####
 
 our $main = MainWindow->new;
@@ -24,11 +25,9 @@ $main->configure( -menu => my $menubar = $main->Menu );
 my $file = $menubar->cascade( -label => '~File' );
 my $edit = $menubar->cascade( -label => '~Edit' );
 my $help = $menubar->cascade( -label => '~Help' );
-$file->command(
-                -label       => "Authorize",
-                -underline   => 1,
-                -command     => \&Auth,
-);
+my $service = $menubar->cascade( -label=> '~Service');
+
+### put stuff in File menu
 $file->separator;
 $file->command(
                 -label       => "Quit",
@@ -37,11 +36,23 @@ $file->command(
                 -command     => \&exit,
 );
 
+### put stuff in Edit menu
 $edit->command( -label => 'Preferences ...' );
 
+### put stuff in Help menu
 $help->command( -label => 'Version', -command => sub { print "Version\n" } );
 $help->separator;
 $help->command( -label => 'About', -command => sub { print "About\n" } );
+
+### put stuff in Service menu
+$service->command(
+			-label=> "Open Server",
+			-accelerator=> 'Ctrl-o',
+			-underline=> 0,
+			-command=> \&Server,
+);
+
+
 our $URLmutable= "https://esi.tech.is/latest/";
 our $URL = $main->Label()->grid(-row=>1, -column=>1, -columnspan=>10);
 $URL->configure(-text=>"${URLmutable}");
@@ -211,7 +222,7 @@ sub useragentstuff {
 #  10000002 the forge
 
 # 34 tritanium
-
+=begin comment
 sub Auth {
 
  use Tk::DialogBox;
@@ -300,8 +311,139 @@ use WWW::Shorten::TinyURL;
 
 my $shorturl= makeashorterlink('https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=http://localhost:8080/callback&client_id=a530913af26a4316a94c24a9a15d3bbc&state=12345');
 my @command = ('start', $shorturl);
-system(@command);
+async{system(@command)};
 
   my $button = $main::box->Show;
 
  }
+=end comment
+
+=cut
+
+ 
+ 
+ sub Server {
+ my $servertop = $main->Toplevel(
+				-title=> 'Auth Server',
+				-width=> '100',
+				-height=> '100',
+				);
+ $main::status= "Server Not Running"; 				
+ my $serverstatus = $servertop->Label(
+ -textvariable=>\$main::status,
+ )->grid(-row=>1, -columnspan=>2);
+ $main::pid = undef; 
+ my $start= $servertop->Button(
+ -text=>"Start Server",
+ -width=>20,
+ -command=> sub {
+				$main::status = "Starting Server";
+				&ServerStart;
+				},
+ )->grid(-row=>2, -columnspan=>2);
+ 
+ my $authenticate = $servertop->Button(
+ -text=>"Authenticate",
+ -width=>20,
+ -command=> sub {
+			$main::status = "Authenticating";
+			use WWW::Shorten::TinyURL;
+
+			my $shorturl= makeashorterlink('https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=http://localhost:8080/callback&client_id=a530913af26a4316a94c24a9a15d3bbc&state=12345');
+			my @command = ('start', $shorturl);
+			system(@command);
+				},
+ )->grid(-row=>3,-columnspan=>2);
+ 
+ my $stop= $servertop->Button(
+ -text=>"Stop Server",
+ -width=>20,
+ -command=> sub {
+			$main::status= "Closing Server";
+			$servertop->update;
+			kill('KILL', $main::pid),
+			sleep 10;
+			$main::status = "Server Not Running";
+			},
+ )->grid(-row=>4, -columnspan=>2);
+ 
+ 
+ 1};
+ 
+ sub ServerStart {
+ $main::coderef = undef;
+
+{
+ package MyWebServer;
+ 
+ use HTTP::Server::Simple::CGI;
+ use base qw(HTTP::Server::Simple::CGI);
+  use Data::Dumper;
+ my %dispatch = (
+     '/hello' => \&resp_hello,
+	 '/callback' => \&resp_code,
+     # ...
+ );
+ 
+ sub handle_request {
+     my $self = shift;
+     my $cgi  = shift;
+   
+     our $path = $cgi->path_info();
+	
+     my $handler = $dispatch{$path};
+
+     if (ref($handler) eq "CODE") {
+         print "HTTP/1.0 200 OK\r\n";
+         $handler->($cgi);
+       #  print $cgi->param('code');
+     } else {
+         print "HTTP/1.0 404 Not found\r\n";
+         print $cgi->header,
+		 print $cgi->path_info();
+               $cgi->start_html('Not found'),
+               $cgi->h1('Not found'),
+               $cgi->end_html;
+     }
+ }
+ 
+ sub resp_hello {
+     my $cgi  = shift;   # CGI.pm object
+     return if !ref $cgi;
+     
+     my $who = $cgi->param('name');
+     my $what = $cgi->param('code');
+     print $cgi->header,
+           $cgi->start_html("Hello"),
+           $cgi->h1("Hello $who!"),
+		   $cgi->h2("\nYour code is $what");
+           $cgi->end_html;
+ }
+ 
+  sub resp_code {
+     my $cgi  = shift;   # CGI.pm object
+     return if !ref $cgi;
+     
+     my $what = $cgi->param('code');
+     
+     print $cgi->header,
+           $cgi->start_html("Hello"),
+           $cgi->h1("Code is $what"),
+           $cgi->end_html;
+$main::coderef = $what;
+ $main::authcode = $main::main->Label()->grid(-row=>5, -column=>1, -columnspan=>10);
+$main::authcode->configure(-textvariable=>\$main::coderef);
+ }
+
+ } 
+
+ 
+
+
+$main::pid = MyWebServer->new(8080)->background();
+print "Use 'kill " , $main::pid , "' to stop server.\n";
+
+$main::status = "Server running: " . $main::pid;
+ };
+ 
+ 
